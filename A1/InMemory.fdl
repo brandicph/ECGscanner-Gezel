@@ -1,0 +1,65 @@
+ipblock instmem(
+	in address : ns(5);
+	in wr, rd : ns(1);
+	in idata : ns(32);
+	out odata : ns(32)
+){
+
+	iptype "ram";
+	ipparm "size=64";
+	ipparm "wl=32";
+	ipparm "file=program.txt";
+}
+
+ dp tram(out address : ns(5);
+         out wr, rd   : ns(1);
+         out idata    : ns(32); 
+         in  odata    : ns(32)) {
+    reg ar       : ns(5);
+    reg idr, odr : ns(32);
+
+    sfg read   {
+    	wr = 0;
+    	rd = 1; 
+    	address = ar;
+    	odr = odata;
+    	idata = idr;  
+      	$display($cycle, " ar :", ar, " odata: ", odata);
+    }
+
+    sfg write  {
+    	wr = 1;
+    	rd = 0;
+    	idata = idr;
+    	odr = odata;
+    	address = ar;  
+      	$display($cycle, " ar: ", ar, " idata: ", idata);    
+    }
+
+    sfg incadr  { ar = ar + 1; idr = idr + 1;}
+    sfg clraddr { ar = 0; }
+ }
+ 
+ fsm ftram(tram) {
+   state   s1;
+   initial s0;
+   @s0 (read, incadr) -> s0;
+   /*
+   @s0 if (ar == 4) then (write, clraddr ) -> s1;
+       else   (write, incadr)  -> s0;
+   @s1 if (ar == 4) then (read,  clraddr)  -> s0;
+       else   (read,  incadr)   -> s1;
+    */
+ }
+ 
+ dp sysRAM {
+   sig adr  : ns(5);
+   sig w, r : ns(1);
+   sig i, o : ns(32);
+   use instmem(adr, w, r, i, o);
+   use tram(adr, w, r, i, o);
+ }
+ 
+ system S {
+   sysRAM;
+ }
