@@ -42,6 +42,7 @@ namespace BinToHex
             catch (Exception ex)
             {
                 richTextBox2.Text = "ERROR!!!!!";
+                //Console.Write(ex.ToString());
             }
 
         }
