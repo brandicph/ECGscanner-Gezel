@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("BinToHex")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("KMD A/S")]
+[assembly: AssemblyCompany("Alexander Brandi")]
 [assembly: AssemblyProduct("BinToHex")]
-[assembly: AssemblyCopyright("Copyright © KMD A/S 2014")]
+[assembly: AssemblyCopyright("Copyright © Alexander Brandi 2014")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
