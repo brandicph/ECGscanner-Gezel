@@ -1,0 +1,30 @@
+ipblock memory(
+  in address : ns(6);
+  in wr,rd : ns(1);
+  in idata : ns(32);
+  out odata : ns(32)
+){
+  iptype "ram";
+  ipparm "size=64";
+  ipparm "wl=32";
+  ipparm "file=IM_instructions.txt";
+}
+
+dp IM (
+  in address: ns(6);
+  out instruction : ns(32)
+){
+  sig wr, rd : ns(1); 
+  sig idata : ns(32);
+  sig odata : ns(32); 
+  use memory(address, wr, rd, idata, odata);
+
+  $trace(odata, "traces/im_instruction.seq");
+
+  always {
+    wr = 0;
+    rd = 1;
+    idata = 0;
+    instruction = odata;
+  }
+}

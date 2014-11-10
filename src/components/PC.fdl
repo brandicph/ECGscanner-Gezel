@@ -1,0 +1,51 @@
+dp PC (
+	in pc_select : ns(1);
+	in pc_target : ns(6);
+	out pc_out : ns(6)
+){
+	reg PCr : ns(5);
+	always {
+		pc_out = pc_select ? pc_target : PCr + 1;
+		PCr = pc_select ? pc_target : PCr + 1;
+	}
+}
+
+dp testPC(
+	out pc_select : ns(1);
+	out pc_target : ns(6);
+	in pc_out : ns(6)
+) {
+	always{
+		$display($dec, "Cycle:", $cycle,
+			", select=", pc_select,
+			", target=", pc_target,
+			", out=", pc_out
+		);
+	}
+	sfg test_0 { pc_select = 0; pc_target = 0; }
+	sfg test_1 { pc_select = 0; pc_target = 0; }
+	sfg test_2 { pc_select = 1; pc_target = 10; }
+	sfg test_3 { pc_select = 0; pc_target = 0; }
+	sfg test_4 { pc_select = 0; pc_target = 0; }
+	sfg test_5 { pc_select = 1; pc_target = 5; }
+	sfg test_6 { pc_select = 0; pc_target = 10; }
+	sfg test_7 { pc_select = 0; pc_target = 0; }
+}
+
+fsm f_testbench(testPC){
+	initial s0;
+	state s1, s2, s3, s4, s5, s6, s7;
+	@s0 (test_0) -> s1;
+	@s1 (test_1) -> s2;
+	@s2 (test_2) -> s3;
+	@s3 (test_3) -> s4;
+	@s4 (test_4) -> s5;
+	@s5 (test_5) -> s6;
+	@s6 (test_6) -> s7;
+	@s7 (test_7) -> s0;
+}
+
+system PCsystem {
+	PC(pc_select, pc_target, pc_out);
+	testPC(pc_select, pc_target, pc_out);
+}

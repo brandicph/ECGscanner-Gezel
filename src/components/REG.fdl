@@ -1,0 +1,128 @@
+dp REG(
+	in data 		: tc(16);
+	in instruction 	: ns(32);
+	in REGdst 		: ns(1);
+	in REGwrite 	: ns(1);
+	out D1 			: tc(16);
+	out D2 			: tc(16)
+){
+
+	sig Rr, Rs, Rt, target : ns(5);
+
+	reg R0, R1, R2, R3, R4, R5, R6, R7 : tc(16);
+
+	always {
+		Rr = instruction[25:21];
+		Rs = instruction[20:16];
+		Rt = instruction[15:11];
+
+		target = (REGdst == 0b1) ? Rt : Rs;
+
+		R0 = 0;
+	    R1 = (REGwrite == 0b1 & target == 0b000001) ? data : R1;
+	    R2 = (REGwrite == 0b1 & target == 0b000010) ? data : R2;
+	    R3 = (REGwrite == 0b1 & target == 0b000011) ? data : R3;
+	    R4 = (REGwrite == 0b1 & target == 0b000100) ? data : R4;
+	    R5 = (REGwrite == 0b1 & target == 0b000101) ? data : R5;
+	    R6 = (REGwrite == 0b1 & target == 0b000110) ? data : R6;
+	    R7 = (REGwrite == 0b1 & target == 0b000111) ? data : R7;
+
+		D1 = (Rr == 0b000000) ? R0 :
+			 (Rr == 0b000001) ? R1 :
+			 (Rr == 0b000010) ? R2 :
+			 (Rr == 0b000011) ? R3 :
+			 (Rr == 0b000100) ? R4 :
+			 (Rr == 0b000101) ? R5 :
+			 (Rr == 0b000110) ? R6 :
+						   		R7 ;
+
+		D2 = (Rs == 0b000000) ? R0 :
+			 (Rs == 0b000001) ? R1 :
+			 (Rs == 0b000010) ? R2 :
+			 (Rs == 0b000011) ? R3 :
+			 (Rs == 0b000100) ? R4 :
+			 (Rs == 0b000101) ? R5 :
+			 (Rs == 0b000110) ? R6 :
+						   		R7 ;
+	}
+}
+
+dp testREG(
+	out data 		: tc(16);
+	out instruction : ns(32);
+	out REGdst 		: ns(1);
+	out REGwrite 	: ns(1);
+	in D1 			: tc(16);
+	in D2 			: tc(16)
+) {
+
+	sig Rr, Rs, Rt, target : ns(5);
+
+	sig opcode : ns(6);
+	sig value : tc(16);
+	
+	always{
+		
+		opcode = instruction[31:26];
+		Rr = instruction[25:21];
+		Rs = instruction[20:16];
+		Rt = instruction[15:11];
+
+		value = instruction[15:0];
+		
+		target = (REGdst == 0b1) ? Rt : Rs;
+
+		$display($dec, "Cycle:", $cycle,
+			", data=", $dec, data,
+			", opcode=", $bin, opcode,
+			", Rr=", $bin, Rr,
+			", Rs=", $bin, Rs,
+			", Rt=", $bin, Rt,
+			", value=", $dec, value,
+			", REGdst=", $bin, REGdst,
+			", REGwrite=", $bin, REGwrite,
+			", target=", $bin, target,
+			", D1=", $dec, D1,
+			", D2=", $dec, D2
+		);
+	}
+
+	sfg test_0 {
+		data 		= 0b0000000000000000;
+		instruction = 0b00000000000000000000000000000000;
+		REGdst 		= 0b0;
+		REGwrite	= 0b0;
+	}
+	sfg test_1 {
+		data 		= 0b0000000000000100;
+		instruction = 0b00000100010000010000000000000100; //0b 000001 00010 00001 0000000000000100
+		REGdst 		= 0b0;
+		REGwrite	= 0b1;
+	}
+	sfg test_2 {
+		data 		= 0b0000000000000011;
+		instruction = 0b00000100011000100000000000000011; //0b 000001 00011 00010 0000000000000011
+		REGdst 		= 0b0;
+		REGwrite	= 0b1;
+	}
+	sfg test_3 {
+		data 		= 0b0000000000000111;
+		instruction = 0b00001100010000010000100000000000; //0b 000011 00010 00001 00001 00000000000
+		REGdst 		= 0b1;
+		REGwrite	= 0b1;
+	}
+}
+
+fsm f_testbench(testREG){
+	initial s0;
+	state s1, s2, s3;
+	@s0 (test_0) -> s1;
+	@s1 (test_1) -> s2;
+	@s2 (test_2) -> s3;
+	@s3 (test_3) -> s0;
+}
+
+system myFirstSystem {
+	REG(data, instruction, REGdest, REGwrite, D1, D2);
+	testREG(data, instruction, REGdest, REGwrite, D1, D2);
+}

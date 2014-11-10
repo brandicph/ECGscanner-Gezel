@@ -1,0 +1,20 @@
+dp PC (
+	in pc_select : ns(1);
+	in instruction : ns(32);
+	out pc_out : ns(6)
+){
+	reg PCr : ns(5);
+	sig target : ns(8);
+
+	$trace(pc_select, "traces/pc_select.seq");
+	$trace(target, "traces/pc_target.seq");
+	$trace(PCr, "traces/pc_PCr.seq");
+	$trace(pc_out, "traces/pc_out.seq");
+
+	always {
+		target = instruction[7:0];
+
+		pc_out = pc_select ? target : PCr + 1;
+		PCr = pc_select ? target : PCr + 1;
+	}
+}

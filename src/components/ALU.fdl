@@ -1,0 +1,70 @@
+dp ALU(
+	in D1, D2 	 	: tc(16);
+	in instruction 	: ns(32);
+	in ALUsrc 		: ns(1);
+ 	in ALUop	 	: ns(1);
+ 	out NEG 		: ns(1);
+ 	out result 		: tc(16)
+){
+	sig A : tc(16);
+	sig B : tc(16);
+	sig C : tc(16);
+
+	always {
+		A = D1;
+		C = instruction[15:0];
+		B = (ALUsrc == 0b1) ? C : D2;
+
+		result = (ALUop == 0b0) ? A + B : A - B;
+		NEG = (result < 0);
+	}
+}
+
+dp testALU(
+	out D1, D2 	 	: tc(16);
+	out instruction : ns(32);
+	out ALUsrc 		: ns(1);
+ 	out ALUop	 	: ns(1);
+ 	in NEG 			: ns(1);
+ 	in result 		: tc(16)
+) {
+	sig A : tc(16);
+	sig B : tc(16);
+	sig C : tc(16);
+
+	always{
+		A = D1;
+		C = instruction[15:0];
+		B = (ALUsrc == 0b1) ? C : D2;
+
+		$display($dec, "Cycle:", $cycle,
+			", D1=", D1,
+			", D2=", D2,
+			", A=", A,
+			", B=", B,
+			", C=", C,
+			", ALUsrc=", $bin, ALUsrc,
+			", ALUop=", $bin, ALUop,
+			", NEG=", $bin, NEG,
+			", result=", $dec, result);
+	}
+	sfg test_0 { D1 = 3; D2 = 6; ALUop = 0b0; ALUsrc = 0b0; instruction = 0b00000000000000000000000000000100; }
+	sfg test_1 { D1 = 2; D2 = 9; ALUop = 0b0; ALUsrc = 0b1; instruction = 0b00000000000000000000000000000100; }
+	sfg test_2 { D1 = 6; D2 = 5; ALUop = 0b1; ALUsrc = 0b0; instruction = 0b00000000000000000000000000000100; }
+	sfg test_3 { D1 = 1; D2 = 5; ALUop = 0b1; ALUsrc = 0b0; instruction = 0b00000000000000000000000000000100; }
+}
+
+// state machine to control testbench
+fsm f_testbench(testALU){
+	initial s0;
+	state s1, s2, s3;
+	@s0 (test_0) -> s1;
+	@s1 (test_1) -> s2;
+	@s2 (test_2) -> s3;
+	@s3 (test_3) -> s0;
+}
+
+system myFirstSystem {
+	ALU(D1, D2, instruction, ALUsrc, ALUop, NEG, result);
+	testALU(D1, D2, instruction, ALUsrc, ALUop, NEG, result);
+}

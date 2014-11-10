@@ -1,4 +1,4 @@
 echo Start Gezel Simulation
-fdlsim PC.fdl 100
+fdlsim OR.fdl 4
 #gtkwave TRACE.vcd &
 #fdlvhd counter.fdl

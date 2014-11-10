@@ -1,0 +1,33 @@
+dp ALU(
+	in D1, D2 	 	: tc(16);
+	in instruction 	: ns(32);
+	in ALUsrc 		: ns(1);
+ 	in ALUop	 	: ns(2);
+ 	out NEG 		: ns(1);
+ 	out result 		: tc(16)
+){
+	sig A : tc(16);
+	sig B : tc(16);
+	sig C : tc(16);
+
+	reg rNEG : ns(1);
+
+	$trace(A, "traces/alu_a.seq");
+	$trace(B, "traces/alu_b.seq");
+	$trace(NEG, "traces/alu_neg.seq");
+	$trace(ALUop, "traces/alu_op.seq");
+	$trace(result, "traces/alu_result.seq");
+
+	always {
+		A = D1;
+		C = instruction[15:0];
+		B = (ALUsrc == 0b1) ? C : D2;
+
+		result = (ALUop == 0b01) ? A + B :
+				 (ALUop == 0b10) ? B - A :
+				 0;
+
+		rNEG = (result < 0 & ALUop != 0b11) ? 0b1 : 0b0;
+		NEG = rNEG;
+	}
+}

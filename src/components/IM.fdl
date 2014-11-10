@@ -1,0 +1,83 @@
+ipblock memory(
+  in address : ns(5);
+  in wr,rd : ns(1);
+  in idata : ns(32);
+  out odata : ns(32)
+){
+  iptype "ram";
+  ipparm "size=64";
+  ipparm "wl=32";
+  ipparm "file=IM_instructions.txt";
+}
+
+dp IM (
+  in address: ns(5);
+  out instruction : ns(32)
+){
+  sig wr, rd : ns(1); 
+  sig idata : ns(32);
+  sig odata : ns(32); 
+  use memory(address, wr, rd, idata, odata);
+
+  always {
+    wr = 0;
+    rd = 1;
+    idata = 0;
+    instruction = odata;
+  }
+}
+ 
+dp testIM(
+  out address : ns(5);
+  in instruction : ns(32)
+) {
+  always{
+    $display($dec, "Cycle:", $cycle,
+      ", address=", address,
+      ", instruction=", $bin, instruction
+    );
+  }
+  sfg test_0 { address = 1; }
+  sfg test_1 { address = 2; }
+  sfg test_2 { address = 3; }
+  sfg test_3 { address = 4; }
+  sfg test_4 { address = 5; }
+  sfg test_5 { address = 6; }
+  sfg test_6 { address = 7; }
+  sfg test_7 { address = 8; }
+  sfg test_8 { address = 9; }
+  sfg test_9 { address = 10; }
+  sfg test_A { address = 11; }
+  sfg test_B { address = 12; }
+  sfg test_C { address = 13; }
+  sfg test_D { address = 14; }
+  sfg test_E { address = 15; }
+  sfg test_F { address = 16; }
+}
+
+fsm f_testbench(testIM){
+  initial s0;
+  state s1, s2, s3, s4, s5, s6, s7, s8, s9, sA, sB, sC, sD, sE, sF;
+  @s0 (test_0) -> s1;
+  @s1 (test_1) -> s2;
+  @s2 (test_2) -> s3;
+  @s3 (test_3) -> s4;
+  @s4 (test_4) -> s5;
+  @s5 (test_5) -> s6;
+  @s6 (test_6) -> s7;
+  @s7 (test_7) -> s8;
+  @s8 (test_8) -> s9;
+  @s9 (test_9) -> sA;
+  @sA (test_A) -> sB;
+  @sB (test_B) -> sC;
+  @sC (test_C) -> sD;
+  @sD (test_D) -> sE;
+  @sE (test_E) -> sF;
+  @sF (test_F) -> s0;
+
+}
+
+system IMsystem {
+  IM(address, instruction);
+  testIM(address, instruction);
+}

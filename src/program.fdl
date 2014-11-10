@@ -1,0 +1,279 @@
+$option "vcd"
+$option "profile_toggle_alledge"
+$option "profile_toggle_upedge"
+$option "profile_display_operations"
+$option "profile_display_cycles"
+dp PC (
+	in pc_select : ns(1);
+	in instruction : ns(32);
+	out pc_out : ns(6)
+){
+	reg PCr : ns(5);
+	sig target : ns(8);
+
+	$trace(pc_select, "traces/pc_select.seq");
+	$trace(target, "traces/pc_target.seq");
+	$trace(PCr, "traces/pc_PCr.seq");
+	$trace(pc_out, "traces/pc_out.seq");
+
+	always {
+		target = instruction[7:0];
+
+		pc_out = pc_select ? target : PCr + 1;
+		PCr = pc_select ? target : PCr + 1;
+	}
+}ipblock memory(
+  in address : ns(6);
+  in wr,rd : ns(1);
+  in idata : ns(32);
+  out odata : ns(32)
+){
+  iptype "ram";
+  ipparm "size=64";
+  ipparm "wl=32";
+  ipparm "file=IM_instructions.txt";
+}
+
+dp IM (
+  in address: ns(6);
+  out instruction : ns(32)
+){
+  sig wr, rd : ns(1); 
+  sig idata : ns(32);
+  sig odata : ns(32); 
+  use memory(address, wr, rd, idata, odata);
+
+  $trace(odata, "traces/im_instruction.seq");
+
+  always {
+    wr = 0;
+    rd = 1;
+    idata = 0;
+    instruction = odata;
+  }
+}dp CTRL (
+  in instruction  : ns(32);
+  out BRANCH      : ns(1);
+  out BNEG        : ns(1);
+  out ALUop       : ns(2); //SUB, ADD ADDI, BNEG
+  out ALUsrc      : ns(1);
+  out REGwrite    : ns(1);
+  out REGdst      : ns(1)
+){
+  sig opcode : ns(6);
+
+  $trace(opcode, "traces/ctrl_opcode.seq");
+  $trace(BRANCH, "traces/ctrl_branch.seq");
+  $trace(REGwrite, "traces/ctrl_reg_write.seq");
+  $trace(ALUop, "traces/ctrl_alu_op.seq");
+
+  always {
+    opcode = instruction[31:26];
+
+    ALUop     = (opcode == 0b000001) ? 0b01 :     //ADDI
+                (opcode == 0b000010) ? 0b10 :     //SUB
+                (opcode == 0b000011) ? 0b01 :     //ADD
+                (opcode == 0b000100) ? 0b11 :     //BNEG
+                0b00;
+
+    ALUsrc    = (opcode == 0b000001) ? 0b1 : 0b0;
+
+    BRANCH    = (opcode == 0b000101) ? 0b1 : 0b0;
+    BNEG      = (opcode == 0b000100) ? 0b1 : 0b0;
+
+    REGwrite  = (opcode == 0b000001) ? 0b1 :
+                (opcode == 0b000010) ? 0b1 :
+                (opcode == 0b000011) ? 0b1 :
+                0b0;
+
+    REGdst    = (opcode == 0b000001) ? 0b0 :
+                (opcode == 0b000000) ? 0b0 :
+                0b1;
+  }
+}dp REG(
+	in data 		: tc(16);
+	in instruction 	: ns(32);
+	in REGdst 		: ns(1);
+	in REGwrite 	: ns(1);
+	out D1 			: tc(16);
+	out D2 			: tc(16)
+){
+
+	sig Rr, Rs, Rt, target : ns(5);
+
+	reg R0, R1, R2, R3, R4, R5, R6, R7 : tc(16);
+
+	$trace(R0, "traces/reg_R0.seq");
+	$trace(R1, "traces/reg_R1.seq");
+	$trace(R2, "traces/reg_R2.seq");
+	$trace(R3, "traces/reg_R3.seq");
+	$trace(R4, "traces/reg_R4.seq");
+	$trace(R5, "traces/reg_R5.seq");
+	$trace(R6, "traces/reg_R6.seq");
+	$trace(R7, "traces/reg_R7.seq");
+
+	$trace(Rr, "traces/reg_Rr.seq");
+	$trace(Rs, "traces/reg_Rs.seq");
+	$trace(Rt, "traces/reg_Rt.seq");
+	$trace(Rt, "traces/reg_target.seq");
+
+	always {
+		Rr = instruction[25:21];
+		Rs = instruction[20:16];
+		Rt = instruction[15:11];
+
+		target = (REGdst == 0b1) ? Rt : Rs;
+
+		R0 = 0;
+	    R1 = (REGwrite == 0b1 & target == 0b000001) ? data : R1;
+	    R2 = (REGwrite == 0b1 & target == 0b000010) ? data : R2;
+	    R3 = (REGwrite == 0b1 & target == 0b000011) ? data : R3;
+	    R4 = (REGwrite == 0b1 & target == 0b000100) ? data : R4;
+	    R5 = (REGwrite == 0b1 & target == 0b000101) ? data : R5;
+	    R6 = (REGwrite == 0b1 & target == 0b000110) ? data : R6;
+	    R7 = (REGwrite == 0b1 & target == 0b000111) ? data : R7;
+
+		D1 = (Rr == 0b000000) ? R0 :
+			 (Rr == 0b000001) ? R1 :
+			 (Rr == 0b000010) ? R2 :
+			 (Rr == 0b000011) ? R3 :
+			 (Rr == 0b000100) ? R4 :
+			 (Rr == 0b000101) ? R5 :
+			 (Rr == 0b000110) ? R6 :
+						   		R7 ;
+
+		D2 = (Rs == 0b000000) ? R0 :
+			 (Rs == 0b000001) ? R1 :
+			 (Rs == 0b000010) ? R2 :
+			 (Rs == 0b000011) ? R3 :
+			 (Rs == 0b000100) ? R4 :
+			 (Rs == 0b000101) ? R5 :
+			 (Rs == 0b000110) ? R6 :
+						   		R7 ;
+	}
+}dp ALU(
+	in D1, D2 	 	: tc(16);
+	in instruction 	: ns(32);
+	in ALUsrc 		: ns(1);
+ 	in ALUop	 	: ns(2);
+ 	out NEG 		: ns(1);
+ 	out result 		: tc(16)
+){
+	sig A : tc(16);
+	sig B : tc(16);
+	sig C : tc(16);
+
+	reg rNEG : ns(1);
+
+	$trace(A, "traces/alu_a.seq");
+	$trace(B, "traces/alu_b.seq");
+	$trace(NEG, "traces/alu_neg.seq");
+	$trace(ALUop, "traces/alu_op.seq");
+	$trace(result, "traces/alu_result.seq");
+
+	always {
+		A = D1;
+		C = instruction[15:0];
+		B = (ALUsrc == 0b1) ? C : D2;
+
+		result = (ALUop == 0b01) ? A + B :
+				 (ALUop == 0b10) ? B - A :
+				 0;
+
+		rNEG = (result < 0 & ALUop != 0b11) ? 0b1 : 0b0;
+		NEG = rNEG;
+	}
+}dp AND (
+	in A, B : ns(1);
+	out R 	: ns(1)
+){
+	always {
+		R = (A & B) ? 0b1 : 0b0;
+	}
+}dp OR (
+	in A, B : ns(1);
+	out R 	: ns(1)
+){
+	always {
+		R = (A | B) ? 0b1 : 0b0;
+	}
+}dp CPU {
+	
+	sig pc_select 		: ns(1);
+	sig pc_out 			: ns(6);
+
+	sig im_instruction 	: ns(32);
+
+	sig ctrl_branch 	: ns(1);
+	sig ctrl_bneg		: ns(1);
+	sig ctrl_alu_op  	: ns(2);
+	sig ctrl_alu_src 	: ns(1);
+	sig ctrl_reg_write 	: ns(1);
+	sig ctrl_reg_dst 	: ns(1);
+
+	sig reg_d1			: tc(16);
+	sig reg_d2			: tc(16);
+
+	sig alu_neg 		: ns(1);
+	sig alu_result 		: tc(16);
+
+	sig and_result		: ns(1);
+
+	sig or_result		: ns(1);
+
+	use PC(pc_select,
+		   im_instruction,
+		   pc_out);
+
+	use IM(pc_out,
+		   im_instruction);
+
+	use CTRL(im_instruction,
+			 ctrl_branch,
+			 ctrl_bneg,
+			 ctrl_alu_op,
+			 ctrl_alu_src,
+			 ctrl_reg_write,
+			 ctrl_reg_dst);
+
+	use REG(alu_result,
+			im_instruction,
+			ctrl_reg_dst,
+			ctrl_reg_write,
+			reg_d1,
+			reg_d2);
+	
+	use ALU(reg_d1,
+			reg_d2,
+			im_instruction,
+			ctrl_alu_src,
+			ctrl_alu_op,
+			alu_neg,
+			alu_result);
+
+	use AND(ctrl_bneg,
+			alu_neg,
+			and_result);
+	
+	use OR(and_result,
+		   ctrl_branch,
+		   or_result);
+
+	always {
+	}
+
+	sfg init { pc_select = 0; }
+	sfg run { pc_select = or_result; }
+}
+
+fsm ftCPU(CPU) {
+	initial s0;
+	state   s1;
+
+	@s0 (init)	-> s1;
+	@s1 (run)	-> s1;
+}
+
+system PCsystem {
+	CPU;
+}

@@ -1,0 +1,40 @@
+dp CTRL (
+  in instruction  : ns(32);
+  out BRANCH      : ns(1);
+  out BNEG        : ns(1);
+  out ALUop       : ns(2); //SUB, ADD ADDI, BNEG
+  out ALUsrc      : ns(1);
+  out REGwrite    : ns(1);
+  out REGdst      : ns(1)
+){
+  sig opcode : ns(6);
+
+  $trace(opcode, "traces/ctrl_opcode.seq");
+  $trace(BRANCH, "traces/ctrl_branch.seq");
+  $trace(REGwrite, "traces/ctrl_reg_write.seq");
+  $trace(ALUop, "traces/ctrl_alu_op.seq");
+
+  always {
+    opcode = instruction[31:26];
+
+    ALUop     = (opcode == 0b000001) ? 0b01 :     //ADDI
+                (opcode == 0b000010) ? 0b10 :     //SUB
+                (opcode == 0b000011) ? 0b01 :     //ADD
+                (opcode == 0b000100) ? 0b11 :     //BNEG
+                0b00;
+
+    ALUsrc    = (opcode == 0b000001) ? 0b1 : 0b0;
+
+    BRANCH    = (opcode == 0b000101) ? 0b1 : 0b0;
+    BNEG      = (opcode == 0b000100) ? 0b1 : 0b0;
+
+    REGwrite  = (opcode == 0b000001) ? 0b1 :
+                (opcode == 0b000010) ? 0b1 :
+                (opcode == 0b000011) ? 0b1 :
+                0b0;
+
+    REGdst    = (opcode == 0b000001) ? 0b0 :
+                (opcode == 0b000000) ? 0b0 :
+                0b1;
+  }
+}

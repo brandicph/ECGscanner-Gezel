@@ -1,0 +1,82 @@
+dp CTRL (
+  in instruction  : ns(32);
+  out BRANCH      : ns(1);
+  out BNEG        : ns(1);
+  out ALUop       : ns(1); //SUB, ADD ADDI
+  out ALUsrc      : ns(1);
+  out REGwrite    : ns(1);
+  out REGdst      : ns(1)
+){
+  sig opcode : ns(6);
+
+  always {
+    opcode = instruction[31:26];
+    //Rr = instruction[25:21];
+    //Rs = instruction[20:16];
+    //Rt = instruction[15:11];
+
+    ALUop     = (opcode == 0b000001) ? 0b0 :     //ADD, ADDI
+                (opcode == 0b000010) ? 0b1 :     //SUB
+                0b0;
+
+    ALUsrc    = (opcode == 0b000001) ? 0b1 : 0b0;
+
+    BRANCH    = (opcode == 0b000101) ? 0b1 : 0b0;
+    BNEG      = (opcode == 0b000100) ? 0b1 : 0b0;
+
+    REGwrite  = (opcode == 0b000001) ? 0b1 :
+                (opcode == 0b000010) ? 0b1 :
+                (opcode == 0b000011) ? 0b1 :
+                0b0;
+
+    REGdst    = (opcode == 0b000001) ? 0b0 :
+                (opcode == 0b000000) ? 0b0 :
+                0b1;
+  }
+}
+
+dp testCTRL(
+  out instruction : ns(32);
+  in BRANCH : ns(1);
+  in BNEG : ns(1);
+  in ALUop : ns(1);
+  in ALUsrc : ns(1);
+  in REGwrite : ns(1);
+  in REGdst : ns(1)
+) {
+  sig opcode : ns(6);
+
+  always{
+      opcode = instruction[31:26];
+      $display("opcode=", $bin, opcode,
+         ", ALUop=", $bin, ALUop,
+         ", ALUsrc=", $bin, ALUsrc,
+         ", BRANCH=", $bin, BRANCH,
+         ", BNEG=", $bin, BNEG,
+         ", REGwrite=", $bin, REGwrite,
+         ", REGsrc=", $bin, REGdst);
+  }
+  sfg test_0            { instruction = 0b00000000000000000000000000000000; }
+  sfg test_ALUopADDI    { instruction = 0b00000100000000000000000000000000; }
+  sfg test_ALUopSUB     { instruction = 0b00001000000000000000000000000000; }
+  sfg test_ALUopADD     { instruction = 0b00001100000000000000000000000000; }
+  sfg test_BRANCH       { instruction = 0b00010100000000000000000000000000; }
+  sfg test_BNEG         { instruction = 0b00010000000000000000000000000000; }
+}
+
+
+fsm f_testbench(testCTRL){
+  initial s0;
+  state s1, s2, s3, s4, s5;
+  @s0 (test_0)          -> s1;
+  @s1 (test_ALUopADDI)  -> s2;
+  @s2 (test_ALUopSUB)   -> s3;
+  @s3 (test_ALUopADD)   -> s4;
+  @s4 (test_BRANCH)     -> s5;
+  @s5 (test_BNEG)       -> s0;
+}
+
+system CTRLsystem {
+  CTRL(instruction, BRANCH, BNEG, ALUop, ALUsrc, REGwrite, REGdst);
+  testCTRL(instruction, BRANCH, BNEG, ALUop, ALUsrc, REGwrite, REGdst);
+}

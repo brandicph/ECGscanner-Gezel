@@ -1,0 +1,80 @@
+dp CPU {
+	
+	sig pc_select 		: ns(1);
+	sig pc_out 			: ns(6);
+
+	sig im_instruction 	: ns(32);
+
+	sig ctrl_branch 	: ns(1);
+	sig ctrl_bneg		: ns(1);
+	sig ctrl_alu_op  	: ns(2);
+	sig ctrl_alu_src 	: ns(1);
+	sig ctrl_reg_write 	: ns(1);
+	sig ctrl_reg_dst 	: ns(1);
+
+	sig reg_d1			: tc(16);
+	sig reg_d2			: tc(16);
+
+	sig alu_neg 		: ns(1);
+	sig alu_result 		: tc(16);
+
+	sig and_result		: ns(1);
+
+	sig or_result		: ns(1);
+
+	use PC(pc_select,
+		   im_instruction,
+		   pc_out);
+
+	use IM(pc_out,
+		   im_instruction);
+
+	use CTRL(im_instruction,
+			 ctrl_branch,
+			 ctrl_bneg,
+			 ctrl_alu_op,
+			 ctrl_alu_src,
+			 ctrl_reg_write,
+			 ctrl_reg_dst);
+
+	use REG(alu_result,
+			im_instruction,
+			ctrl_reg_dst,
+			ctrl_reg_write,
+			reg_d1,
+			reg_d2);
+	
+	use ALU(reg_d1,
+			reg_d2,
+			im_instruction,
+			ctrl_alu_src,
+			ctrl_alu_op,
+			alu_neg,
+			alu_result);
+
+	use AND(ctrl_bneg,
+			alu_neg,
+			and_result);
+	
+	use OR(and_result,
+		   ctrl_branch,
+		   or_result);
+
+	always {
+	}
+
+	sfg init { pc_select = 0; }
+	sfg run { pc_select = or_result; }
+}
+
+fsm ftCPU(CPU) {
+	initial s0;
+	state   s1;
+
+	@s0 (init)	-> s1;
+	@s1 (run)	-> s1;
+}
+
+system PCsystem {
+	CPU;
+}

@@ -1,0 +1,8 @@
+dp AND (
+	in A, B : ns(1);
+	out R 	: ns(1)
+){
+	always {
+		R = (A & B) ? 0b1 : 0b0;
+	}
+}

@@ -1,0 +1,41 @@
+dp OR (
+	in A, B : ns(1);
+	out R 	: ns(1)
+){
+	always {
+		R = (A | B) ? 0b1 : 0b0;
+	}
+}
+
+dp testOR(
+	out A, B  : ns(1);
+ 	in R : ns(1)
+) {
+
+	always{
+		$display($dec, "Cycle:", $cycle,
+			", A=", A,
+			", B=", B,
+			", R=", R);
+	}
+
+	sfg test_0 { A = 0b0; B = 0b0; }
+	sfg test_1 { A = 0b0; B = 0b1; }
+	sfg test_2 { A = 0b1; B = 0b0; }
+	sfg test_3 { A = 0b1; B = 0b1; }
+}
+
+// state machine to control testbench
+fsm f_testbench(testOR){
+	initial s0;
+	state s1, s2, s3;
+	@s0 (test_0) -> s1;
+	@s1 (test_1) -> s2;
+	@s2 (test_2) -> s3;
+	@s3 (test_3) -> s0;
+}
+
+system myFirstSystem {
+	OR(A, B, R);
+	testOR(A, B, R);
+}
