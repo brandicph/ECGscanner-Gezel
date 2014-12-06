@@ -17,7 +17,7 @@ namespace BinToHex
             InitializeComponent();
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void btnBinHex_Click(object sender, EventArgs e)
         {
             try
             {
@@ -31,9 +31,11 @@ namespace BinToHex
 
                 for (int i = 0; i < arr.Length; i++)
                 {
+                    if (arr[i].Length == 0)
+                        continue;
                     string bin = arr[i].Substring(arr[i].IndexOf(@"00") + @"00".Length);
-                    string hex = HexConverted(bin);
-                    string line = string.Format("{0} {1} \n", i.ToString("X"), hex);
+                    string hex = BinToHex(bin, 8);
+                    string line = string.Format("{0} {1}\n", (i+1).ToString("X"), hex);
                     sb.Append(line);
                 }
 
@@ -47,10 +49,58 @@ namespace BinToHex
 
         }
 
-        string HexConverted(string strBinary)
+        string BinToHex(string strBinary, int length)
         {
-            string strHex = Convert.ToInt32(strBinary, 2).ToString("X8");
+            string strHex = Convert.ToInt32(strBinary, 2).ToString(string.Format("X{0}",length));
             return strHex;
+        }
+
+        string HexToBin(string strHex, int length)
+        {
+            string strBinary = Convert.ToString(Convert.ToInt64(strHex, 16), 2).PadLeft(length, '0');
+            return strBinary;
+        }
+
+        private void btnHexBin_Click(object sender, EventArgs e)
+        {
+
+            try
+            {
+                string str = richTextBox2.Text;
+                string[] arr = str.Split('\n');
+
+                StringBuilder sb = new StringBuilder();
+
+                for (int i = 0; i < arr.Length; i++)
+                {
+                    if (arr[i].Length == 0)
+                        continue;
+
+                    arr[i] = arr[i].Replace("\t", "");
+                    string[] lineval = arr[i].Split(' ');
+
+                    string hex = "";
+                    if (lineval.Length > 1)
+                    {
+                        hex = lineval[1].Replace(" ", "");
+                    }
+                    else
+                    {
+                        hex = lineval[0].Replace(" ", ""); ;
+                    }
+
+                    string bin = HexToBin(hex, 32);
+                    string line = string.Format("{0}\n", bin);
+                    sb.Append(line);
+                }
+
+                richTextBox1.Text = sb.ToString();
+            }
+            catch (Exception ex)
+            {
+                richTextBox1.Text = "ERROR!!!!!";
+                //Console.Write(ex.ToString());
+            }
         }
     }
 }
