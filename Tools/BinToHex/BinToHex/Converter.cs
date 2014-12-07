@@ -10,9 +10,9 @@ using System.Windows.Forms;
 
 namespace BinToHex
 {
-    public partial class Form1 : Form
+    public partial class Converter : Form
     {
-        public Form1()
+        public Converter()
         {
             InitializeComponent();
 
