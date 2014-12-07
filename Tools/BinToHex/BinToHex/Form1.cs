@@ -15,6 +15,8 @@ namespace BinToHex
         public Form1()
         {
             InitializeComponent();
+
+            txtHexIndex.Enabled = chkHexIndex.Checked;
         }
 
         private void btnBinHex_Click(object sender, EventArgs e)
@@ -34,8 +36,10 @@ namespace BinToHex
                     if (arr[i].Length == 0)
                         continue;
                     string bin = arr[i].Substring(arr[i].IndexOf(@"00") + @"00".Length);
-                    string hex = BinToHex(bin, 8);
-                    string line = string.Format("{0} {1}\n", (i+1).ToString("X"), hex);
+                    int hexLength = int.Parse(txtHexLength.Text);
+                    string hex = BinToHex(bin, hexLength);
+                    int hexIndex = (chkHexIndex.Checked) ? int.Parse(txtHexIndex.Text) : 0;
+                    string line = (chkHexIndex.Checked) ? string.Format("{0} {1}\n", (i + hexIndex).ToString("X"), hex) : string.Format("{0}\n", hex);
                     sb.Append(line);
                 }
 
@@ -89,7 +93,8 @@ namespace BinToHex
                         hex = lineval[0].Replace(" ", ""); ;
                     }
 
-                    string bin = HexToBin(hex, 32);
+                    int binLength = int.Parse(txtBinLength.Text);
+                    string bin = HexToBin(hex, binLength);
                     string line = string.Format("{0}\n", bin);
                     sb.Append(line);
                 }
@@ -101,6 +106,11 @@ namespace BinToHex
                 richTextBox1.Text = "ERROR!!!!!";
                 //Console.Write(ex.ToString());
             }
+        }
+
+        private void chkHexIndex_CheckedChanged(object sender, EventArgs e)
+        {
+            txtHexIndex.Enabled = chkHexIndex.Checked;
         }
     }
 }
